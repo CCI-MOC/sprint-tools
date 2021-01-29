@@ -9,6 +9,7 @@ from moc_sprint_tools import label_needs_description
 from moc_sprint_tools import sort_cards_by_priority
 from moc_sprint_tools import cards_missing_from_backlog
 from moc_sprint_tools import close_sprint_boards
+from moc_sprint_tools import create_sprint_boards
 from moc_sprint_tools import utils
 
 from moc_sprint_tools.sprintman import Sprintman

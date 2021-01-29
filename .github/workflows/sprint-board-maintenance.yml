@@ -54,3 +54,9 @@ jobs:
           pipenv run moc-sprint-tools -v close-sprint-boards
         env:
           GH_API_TOKEN: ${{ secrets.GH_API_TOKEN }}
+
+      - name: "Create new sprints"
+        run: |
+          pipenv run moc-sprint-tools -v create-sprint-boards
+        env:
+          GH_API_TOKEN: ${{ secrets.GH_API_TOKEN }}

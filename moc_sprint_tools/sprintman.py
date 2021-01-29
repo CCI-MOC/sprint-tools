@@ -3,6 +3,8 @@ import logging
 
 from functools import wraps
 
+from moc_sprint_tools import defaults
+
 LOG = logging.getLogger(__name__)
 DEFAULT_ORG = 'CCI-MOC'
 DEFAULT_BACKLOG = 'mocbacklog'
@@ -47,6 +49,13 @@ class Sprintman(github.Github):
             if board.name.lower().strip().startswith('sprint'):
                 yield board
 
+    @cached
+    def get_sprint(self, name):
+        for board in self.open_sprints:
+            if board.name.lower() == name:
+                return board
+        raise BoardNotFoundError(name)
+
     @property
     def closed_sprints(self):
         for board in self.organization.get_projects('closed'):
@@ -60,5 +69,14 @@ class Sprintman(github.Github):
                 break
         else:
             raise BoardNotFoundError(self._backlog_name)
+
+        return board
+
+    def create_sprint(self, name):
+        board = self.organization.create_project(name)
+        board.edit(private=False)
+
+        for column in defaults.default_sprint_columns:
+            board.create_column(column)
 
         return board
