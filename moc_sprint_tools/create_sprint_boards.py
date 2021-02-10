@@ -67,10 +67,11 @@ def copy_board(source_board, destination_board):
             copy_card(card, destination)
 
 
-@click.command(name='create-sprint-board')
-@click.option('--file', '-f', type=str, default='etc/sprint_dates.csv')
+@click.command(name='create-sprint-boards')
+@click.option('--file', '-f', type=str, default='./config/sprint_dates.csv')
+@click.option('--copy-cards/--no-copy-cards', default=True)
 @click.pass_context
-def main(ctx, file):
+def main(ctx, file, copy_cards):
     api = ctx.obj
 
     try:
@@ -96,9 +97,8 @@ def main(ctx, file):
             return
         except BoardNotFoundError:
             board = api.create_sprint(current_sprint[0])
-            LOG.info('Created board %s' % board.name)
 
-            if previous_sprint:
+            if previous_sprint and copy_cards:
                 previous_board = api.get_sprint(previous_sprint[0])
                 copy_board(previous_board, board)
 

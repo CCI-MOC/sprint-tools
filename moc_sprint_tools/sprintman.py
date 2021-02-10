@@ -52,7 +52,7 @@ class Sprintman(github.Github):
     @cached
     def get_sprint(self, name):
         for board in self.open_sprints:
-            if board.name.lower() == name:
+            if board.name.lower() == name.lower():
                 return board
         raise BoardNotFoundError(name)
 
@@ -75,6 +75,7 @@ class Sprintman(github.Github):
     def create_sprint(self, name):
         board = self.organization.create_project(name)
         board.edit(private=False)
+        LOG.info('Created board %s' % board.name)
 
         for column in defaults.default_sprint_columns:
             board.create_column(column)
