@@ -8,6 +8,7 @@ from moc_sprint_tools import utils
 
 from moc_sprint_tools.cmd import cards_missing_from_backlog
 from moc_sprint_tools.cmd import close_sprint_boards
+from moc_sprint_tools.cmd import copy_cards
 from moc_sprint_tools.cmd import create_sprint_boards
 from moc_sprint_tools.cmd import label_cards_in_sprint
 from moc_sprint_tools.cmd import label_needs_description
@@ -35,12 +36,13 @@ def main(ctx, verbose, organization):
         raise click.ClickException(err)
 
 
+main.add_command(cards_missing_from_backlog.main)
+main.add_command(close_sprint_boards.main)
+main.add_command(copy_cards.main)
+main.add_command(create_sprint_boards.main)
 main.add_command(label_cards_in_sprint.main)
 main.add_command(label_needs_description.main)
 main.add_command(sort_cards_by_priority.main)
-main.add_command(cards_missing_from_backlog.main)
-main.add_command(create_sprint_boards.main)
-main.add_command(close_sprint_boards.main)
 main.add_command(utils.shell)
 main.add_command(utils.repos)
 main.add_command(utils.boards)
