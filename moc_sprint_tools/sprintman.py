@@ -56,6 +56,11 @@ class Sprintman(github.Github):
 
         return board
 
+    def get_column(self, board, name):
+        for c in board.get_columns():
+            if c.name.lower() == name.lower():
+                return c
+
     def create_sprint(self, name):
         board = self.organization.create_project(name)
         board.edit(private=False)
@@ -65,3 +70,51 @@ class Sprintman(github.Github):
             board.create_column(column)
 
         return board
+
+    def copy_card(self, source_card, destination_column):
+        content = source_card.get_content()
+
+        if content:
+            if isinstance(content, github.Issue.Issue):
+                content_type = 'Issue'
+            elif isinstance(content, github.PullRequest.PullRequest):
+                content_type = 'PullRequest'
+            else:
+                LOG.warning("couldn't copy card %s with unkown type", source_card)
+                return
+
+            LOG.info('adding card "%s" to column %s',
+                     content.title,
+                     destination_column.name)
+            destination_column.create_card(
+                content_id=content.id,
+                content_type=content_type,
+            )
+        elif source_card.note:
+            destination_column.create_card(note=source_card.note)
+        else:
+            raise ValueError(f'card {source_card.id} has no content')
+
+    def copy_board(self, source_board, destination_board,
+                   columns=None, ignore_columns=None):
+
+        if columns is None:
+            columns = source_board.get_columns()
+
+        if ignore_columns is None:
+            ignore_columns = defaults.default_skip_copy
+
+        for source in columns:
+            LOG.debug('copying cards from column %s', source.name)
+            if source.name.lower() in ignore_columns:
+                continue
+
+            destination = self.get_column(destination_board, source.name)
+            if destination is None:
+                destination = destination_board.create_column(source.name)
+
+            cards = list(source.get_cards())
+
+            for card in reversed(cards):
+                LOG.debug('copying card %s', card.id)
+                self.copy_card(card, destination)
