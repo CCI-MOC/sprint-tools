@@ -79,7 +79,7 @@ def main(ctx, file, copy_cards):
         previous_sprint = None
         today = datetime.datetime.utcnow()
 
-        for line, sprint in enumerate(sprints):
+        for line, sprint in enumerate(sorted(sprints, key=lambda x: x[1])):
             if today > sprint[1]:
                 current_sprint = sprint
 
@@ -100,8 +100,11 @@ def main(ctx, file, copy_cards):
             board = api.create_sprint(current_sprint[0])
 
             if previous_sprint and copy_cards:
-                previous_board = api.get_sprint(previous_sprint[0])
-                copy_board(previous_board, board)
+                try:
+                    previous_board = api.get_sprint(previous_sprint[0])
+                    copy_board(previous_board, board)
+                except BoardNotFoundError:
+                    LOG.error('previous sprint board %s does not exist', previous_sprint[0])
 
     except github.GithubException as err:
         raise click.ClickException(err)
