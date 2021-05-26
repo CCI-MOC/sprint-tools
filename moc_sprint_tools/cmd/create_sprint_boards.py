@@ -5,7 +5,7 @@ import jinja2
 import json
 import logging
 
-from moc_sprint_tools.sprintman import BoardNotFoundError
+from moc_sprint_tools.sprintman import BoardNotFoundError, BoardConflictError
 from moc_sprint_tools import defaults
 
 LOG = logging.getLogger(__name__)
@@ -18,10 +18,21 @@ def Date(val):
     (datetime.date.today()).
     '''
 
+    LOG.debug("got date = %r", val)
+
+    # LKS: Running via GitHub Actions, this method seems to get
+    # called twice, first with the string value from the --date
+    # option and the second time with a datetime.datetime object
+    # (probably the one returned by the first call).
+    if isinstance(val, datetime.date):
+        return val
+
     if val in ['now', 'today']:
         date = datetime.date.today()
-    else:
+    elif isinstance(val, str):
         date = datetime.date.fromisoformat(val)
+    else:
+        date = None
 
     if date is None:
         raise ValueError(val)
@@ -93,8 +104,9 @@ def check_overlaps(api, date):
 @click.option('--force', '-f', is_flag=True)
 @click.option('--check-only', '-n', is_flag=True)
 @click.option('--notes-repo', '-N', default=defaults.default_sprint_notes_repo)
+@click.option('--conflict-is-warning', is_flag=True)
 @click.pass_context
-def main(ctx, date, templates, force, check_only, notes_repo, copy_cards):
+def main(ctx, date, templates, force, check_only, notes_repo, copy_cards, conflict_is_warning):
     '''create sprint board for the current date
 
     create a new project board for a sprint beginning on the current date (or
@@ -165,7 +177,7 @@ def main(ctx, date, templates, force, check_only, notes_repo, copy_cards):
         LOG.debug('found conflicts: %s', conflicts)
         if conflicts and not force:
             titles = ', '.join(sprint.name for sprint in conflicts)
-            raise click.ClickException(
+            raise BoardConflictError(
                 f'new sprint {sprint_title} overlaps with {titles}')
 
         if previous:
@@ -205,6 +217,12 @@ def main(ctx, date, templates, force, check_only, notes_repo, copy_cards):
             api.copy_board(previous, board)
         elif copy_cards:
             LOG.warning('not copying cards (no previous board)')
+
+    except BoardConflictError as err:
+        if conflict_is_warning:
+            LOG.warning("did not create board: %s", err)
+        else:
+            raise click.ClickException(str(err))
 
     except github.GithubException as err:
         raise click.ClickException(err)

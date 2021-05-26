@@ -17,7 +17,17 @@ class ApplicationError(Exception):
 
 
 class BoardNotFoundError(ApplicationError):
+    '''Reference to a board that does not exist.'''
     pass
+
+
+class BoardConflictError(ApplicationError):
+    '''Attempt to create a board that overlaps an existing board'''
+    pass
+
+
+class BoardExistsError(ApplicationError):
+    '''Attempt to create a board with the same name as an existing board.'''
 
 
 # XXX: there should probably be some error handling inside
