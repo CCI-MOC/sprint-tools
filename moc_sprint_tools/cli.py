@@ -13,6 +13,7 @@ from moc_sprint_tools.cmd import create_sprint_boards
 from moc_sprint_tools.cmd import label_cards_in_sprint
 from moc_sprint_tools.cmd import label_needs_description
 from moc_sprint_tools.cmd import sort_cards_by_priority
+from moc_sprint_tools.cmd import remove_done_cards
 
 from moc_sprint_tools.sprintman import Sprintman
 
@@ -43,6 +44,7 @@ main.add_command(create_sprint_boards.main)
 main.add_command(label_cards_in_sprint.main)
 main.add_command(label_needs_description.main)
 main.add_command(sort_cards_by_priority.main)
+main.add_command(remove_done_cards.main)
 main.add_command(utils.shell)
 main.add_command(utils.repos)
 main.add_command(utils.boards)

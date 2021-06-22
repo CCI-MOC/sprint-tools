@@ -1,13 +1,13 @@
 ---
-name: "Sprint board maintenance"
+name: "Sprint board hourly(-ish) maintenance"
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '0 */2 * * *'
   workflow_dispatch:
 
 jobs:
   label_open_boards:
-    name: "Sprint board maintenance"
+    name: "Sprint board hourly maintenance"
     runs-on: ubuntu-latest
 
     steps:
@@ -31,12 +31,6 @@ jobs:
         env:
           GH_API_TOKEN: ${{ secrets.GH_API_TOKEN }}
 
-      - name: "Sort priority tagged cards"
-        run: |
-          pipenv run moc-sprint-tools -v sort-cards-by-priority
-        env:
-          GH_API_TOKEN: ${{ secrets.GH_API_TOKEN }}
-
       - name: "Add needs_description label"
         run: |
           pipenv run moc-sprint-tools -v label-needs-description
@@ -46,11 +40,5 @@ jobs:
       - name: "Add missing cards to backlog"
         run: |
           pipenv run moc-sprint-tools -v cards-missing-from-backlog
-        env:
-          GH_API_TOKEN: ${{ secrets.GH_API_TOKEN }}
-
-      - name: "Close out old sprints"
-        run: |
-          pipenv run moc-sprint-tools -v close-sprint-boards
         env:
           GH_API_TOKEN: ${{ secrets.GH_API_TOKEN }}

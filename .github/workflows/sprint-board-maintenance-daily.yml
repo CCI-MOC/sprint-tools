@@ -1,0 +1,38 @@
+---
+name: "Sprint board daily maintenance"
+on:
+  schedule:
+    - cron: '15 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  label_open_boards:
+    name: "Sprint board daily maintenance"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v2
+
+      - name: "Set up python"
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: "Install dependencies"
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipenv
+          pipenv install -e .
+
+      - name: "Close out old sprints"
+        run: |
+          pipenv run moc-sprint-tools -v close-sprint-boards
+        env:
+          GH_API_TOKEN: ${{ secrets.GH_API_TOKEN }}
+
+      - name: "Remove done cards from backlog"
+        run: |
+          pipenv run moc-sprint-tools -v remove-done-cards
+        env:
+          GH_API_TOKEN: ${{ secrets.GH_API_TOKEN }}
