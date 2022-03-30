@@ -103,10 +103,11 @@ def check_overlaps(api, date):
 @click.option('--templates', '-t')
 @click.option('--force', '-f', is_flag=True)
 @click.option('--check-only', '-n', is_flag=True)
+@click.option('--sprint-notes/--no-sprint-notes', default=True)
 @click.option('--notes-repo', '-N', default=defaults.default_sprint_notes_repo)
 @click.option('--conflict-is-warning', is_flag=True)
 @click.pass_context
-def main(ctx, date, templates, force, check_only, notes_repo, copy_cards, conflict_is_warning):
+def main(ctx, date, templates, force, check_only, sprint_notes, notes_repo, copy_cards, conflict_is_warning):
     '''create sprint board for the current date
 
     create a new project board for a sprint beginning on the current date (or
@@ -146,16 +147,6 @@ def main(ctx, date, templates, force, check_only, notes_repo, copy_cards, confli
         LOG.debug('got title: %s', sprint_title)
         LOG.debug('got description: %s', sprint_description)
 
-        # check if board exists
-
-        sprint_notes_title = env.get_template('sprint_notes_title.j2').render(
-            week1=week1, week2=week2
-        )
-
-        sprint_notes_description = env.get_template('sprint_notes_description.j2').render(
-            week1=week1, week2=week2
-        )
-
         repo = api.organization.get_repo(notes_repo)
 
         try:
@@ -165,10 +156,18 @@ def main(ctx, date, templates, force, check_only, notes_repo, copy_cards, confli
         except BoardNotFoundError:
             LOG.info('preparing to create sprint board "%s"' % sprint_title)
 
-        #  check for existing notes issue
-        issue = find_notes_issue(repo, sprint_notes_title)
-        if issue:
-            LOG.info('using existing notes issue')
+        if sprint_notes:
+            sprint_notes_title = env.get_template('sprint_notes_title.j2').render(
+                week1=week1, week2=week2
+            )
+
+            sprint_notes_description = env.get_template('sprint_notes_description.j2').render(
+                week1=week1, week2=week2
+            )
+
+            notes_issue = find_notes_issue(repo, sprint_notes_title)
+            if notes_issue:
+                LOG.info('using existing notes issue')
 
         # check for overlap with existing sprint
 
@@ -195,21 +194,20 @@ def main(ctx, date, templates, force, check_only, notes_repo, copy_cards, confli
         LOG.info('creating board %s', sprint_title)
         board = api.create_sprint(sprint_title, body=sprint_description)
 
-        # create sprint notes issue
+        if sprint_notes:
+            # create sprint notes issue
+            if not notes_issue:
+                LOG.info('creating sprint notes issue in %s', notes_repo)
+                notes_issue = repo.create_issue(title=sprint_notes_title,
+                                                body=sprint_notes_description)
 
-        if not issue:
-            LOG.info('creating sprint notes issue in %s', notes_repo)
-            issue = repo.create_issue(title=sprint_notes_title,
-                                      body=sprint_notes_description)
-
-        # add sprint note to card in notes column
-
-        LOG.info('creating sprint notes card')
-        notes = api.get_column(board, 'notes')
-        notes.create_card(
-            content_id=issue.id,
-            content_type='Issue',
-        )
+            # add sprint note to card in notes column
+            LOG.info('creating sprint notes card')
+            notes = api.get_column(board, 'notes')
+            notes.create_card(
+                content_id=notes_issue.id,
+                content_type='Issue',
+            )
 
         # copy cards if requested
         if copy_cards and previous:
