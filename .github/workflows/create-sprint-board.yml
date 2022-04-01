@@ -28,6 +28,6 @@ jobs:
       - name: "Create sprint boards"
         run: |
           pipenv run moc-sprint-tools -v create-sprint-boards \
-            --no-copy-cards --conflict-is-warning
+            --no-copy-cards --conflict-is-warning --no-sprint-notes
         env:
           GH_API_TOKEN: ${{ secrets.GH_API_TOKEN }}
