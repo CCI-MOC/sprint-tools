@@ -166,8 +166,6 @@ def main(
         LOG.debug("got title: %s", sprint_title)
         LOG.debug("got description: %s", sprint_description)
 
-        repo = api.organization.get_repo(notes_repo)
-
         try:
             api.get_sprint(sprint_title)
             LOG.warning('sprint board "%s" already exists.' % sprint_title)
@@ -176,6 +174,8 @@ def main(
             LOG.info('preparing to create sprint board "%s"' % sprint_title)
 
         if sprint_notes:
+            repo = api.organization.get_repo(notes_repo)
+
             sprint_notes_title = env.get_template("sprint_notes_title.j2").render(
                 week1=week1, week2=week2
             )
