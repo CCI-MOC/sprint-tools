@@ -12,11 +12,11 @@ LOG = logging.getLogger(__name__)
 
 
 def Date(val):
-    '''transform date on the command line into a datetime.date object
+    """transform date on the command line into a datetime.date object
 
     the values 'now' and 'today' both evaluate to the current day
     (datetime.date.today()).
-    '''
+    """
 
     LOG.debug("got date = %r", val)
 
@@ -27,7 +27,7 @@ def Date(val):
     if isinstance(val, datetime.date):
         return val
 
-    if val in ['now', 'today']:
+    if val in ["now", "today"]:
         date = datetime.date.today()
     elif isinstance(val, str):
         date = datetime.date.fromisoformat(val)
@@ -41,19 +41,19 @@ def Date(val):
 
 
 def find_notes_issue(repo, title):
-    '''find an issue by title in the specified repository'''
+    """find an issue by title in the specified repository"""
 
-    for issue in repo.get_issues(state='open'):
+    for issue in repo.get_issues(state="open"):
         if issue.title == title:
             return issue
 
 
 def dump_date_as_iso8601(val):
-    '''serialize datetime.date objects to JSON
+    """serialize datetime.date objects to JSON
 
     used when calling json.dump/json.dumps on objects
     that contain datetime.date values
-    '''
+    """
 
     if isinstance(val, datetime.date):
         return val.isoformat()
@@ -62,13 +62,13 @@ def dump_date_as_iso8601(val):
 
 
 def check_overlaps(api, date):
-    '''look for existing sprints that conflict with the current date
+    """look for existing sprints that conflict with the current date
 
     since this function has to iterate through all existing sprint boards,
     it also calculates the immediately prior sprint.
 
     returns a (previous_board, list_of_conflicts) tuple to the caller.
-    '''
+    """
 
     conflicts = []
     sprints = []
@@ -79,12 +79,12 @@ def check_overlaps(api, date):
         except (TypeError, json.decoder.JSONDecodeError):
             continue
 
-        for attr in ['week1', 'week2']:
+        for attr in ["week1", "week2"]:
             md[attr] = datetime.date.fromisoformat(md[attr])
 
-        sprints.append((md['week1'], md['week2'], sprint))
+        sprints.append((md["week1"], md["week2"], sprint))
 
-        if md['week1'] < date < md['week2'] + datetime.timedelta(days=7):
+        if md["week1"] < date < md["week2"] + datetime.timedelta(days=7):
             conflicts.append(sprint)
 
     try:
@@ -97,57 +97,74 @@ def check_overlaps(api, date):
     return prev_board, conflicts
 
 
-@click.command(name='create-sprint-boards')
-@click.option('--copy-cards/--no-copy-cards', default=True)
-@click.option('--date', '-d', type=Date, default='now')
-@click.option('--templates', '-t')
-@click.option('--force', '-f', is_flag=True)
-@click.option('--check-only', '-n', is_flag=True)
-@click.option('--sprint-notes/--no-sprint-notes', default=True)
-@click.option('--notes-repo', '-N', default=defaults.default_sprint_notes_repo)
-@click.option('--conflict-is-warning', is_flag=True)
+@click.command(name="create-sprint-boards")
+@click.option("--copy-cards/--no-copy-cards", default=True)
+@click.option("--date", "-d", type=Date, default="now")
+@click.option("--templates", "-t")
+@click.option("--force", "-f", is_flag=True)
+@click.option("--check-only", "-n", is_flag=True)
+@click.option("--sprint-notes/--no-sprint-notes", default=True)
+@click.option("--notes-repo", "-N", default=defaults.default_sprint_notes_repo)
+@click.option("--conflict-is-warning", is_flag=True)
 @click.pass_context
-def main(ctx, date, templates, force, check_only, sprint_notes, notes_repo, copy_cards, conflict_is_warning):
-    '''create sprint board for the current date
+def main(
+    ctx,
+    date,
+    templates,
+    force,
+    check_only,
+    sprint_notes,
+    notes_repo,
+    copy_cards,
+    conflict_is_warning,
+):
+    """create sprint board for the current date
 
     create a new project board for a sprint beginning on the current date (or
     on the argument to --date, if provided). create-sprint-board will not
     create a sprint board if one with the same name already exists. It will not
     create a sprint board if the dates overlap with an existing open sprint
     unless you provide the --force option.
-    '''
+    """
 
     api = ctx.obj
 
-    loaders = []
+    loaders: list[jinja2.loaders.BaseLoader] = []
     if templates:
         loaders.append(jinja2.FileSystemLoader(templates))
-    loaders.append(jinja2.PackageLoader('moc_sprint_tools'))
+    loaders.append(jinja2.PackageLoader("moc_sprint_tools"))
 
     env = jinja2.Environment(
         loader=jinja2.ChoiceLoader(loaders),
     )
-    env.globals['api'] = api
+    env.globals["api"] = api
 
     try:
         week1 = date
         week2 = date + datetime.timedelta(days=7)
 
-        sprint_title = env.get_template('sprint_title.j2').render(
+        sprint_title = env.get_template("sprint_title.j2").render(
             week1=week1, week2=week2
         )
 
-        sprint_description = json.dumps(dict(
-            week1=week1,
-            week2=week2
-        ), default=dump_date_as_iso8601)
+        sprint_description = json.dumps(
+            dict(week1=week1, week2=week2), default=dump_date_as_iso8601
+        )
 
-        LOG.debug('got week1: %s | %s | %s', week1, week1.isocalendar(), week1.isocalendar().week)
-        LOG.debug('got week2: %s | %s | %s', week2, week2.isocalendar(), week2.isocalendar().week)
-        LOG.debug('got title: %s', sprint_title)
-        LOG.debug('got description: %s', sprint_description)
-
-        repo = api.organization.get_repo(notes_repo)
+        LOG.debug(
+            "got week1: %s | %s | %s",
+            week1,
+            week1.isocalendar(),
+            week1.isocalendar().week,
+        )
+        LOG.debug(
+            "got week2: %s | %s | %s",
+            week2,
+            week2.isocalendar(),
+            week2.isocalendar().week,
+        )
+        LOG.debug("got title: %s", sprint_title)
+        LOG.debug("got description: %s", sprint_description)
 
         try:
             api.get_sprint(sprint_title)
@@ -157,30 +174,33 @@ def main(ctx, date, templates, force, check_only, sprint_notes, notes_repo, copy
             LOG.info('preparing to create sprint board "%s"' % sprint_title)
 
         if sprint_notes:
-            sprint_notes_title = env.get_template('sprint_notes_title.j2').render(
+            repo = api.organization.get_repo(notes_repo)
+
+            sprint_notes_title = env.get_template("sprint_notes_title.j2").render(
                 week1=week1, week2=week2
             )
 
-            sprint_notes_description = env.get_template('sprint_notes_description.j2').render(
-                week1=week1, week2=week2
-            )
+            sprint_notes_description = env.get_template(
+                "sprint_notes_description.j2"
+            ).render(week1=week1, week2=week2)
 
             notes_issue = find_notes_issue(repo, sprint_notes_title)
             if notes_issue:
-                LOG.info('using existing notes issue')
+                LOG.info("using existing notes issue")
 
         # check for overlap with existing sprint
 
         previous, conflicts = check_overlaps(api, week1)
-        LOG.debug('found previous board: %s', previous)
-        LOG.debug('found conflicts: %s', conflicts)
+        LOG.debug("found previous board: %s", previous)
+        LOG.debug("found conflicts: %s", conflicts)
         if conflicts and not force:
-            titles = ', '.join(sprint.name for sprint in conflicts)
+            titles = ", ".join(sprint.name for sprint in conflicts)
             raise BoardConflictError(
-                f'new sprint {sprint_title} overlaps with {titles}')
+                f"new sprint {sprint_title} overlaps with {titles}"
+            )
 
         if previous:
-            LOG.info('found previous sprint %s', previous.name)
+            LOG.info("found previous sprint %s", previous.name)
 
         if check_only:
             return
@@ -191,30 +211,31 @@ def main(ctx, date, templates, force, check_only, sprint_notes, notes_repo, copy
 
         # create project board
 
-        LOG.info('creating board %s', sprint_title)
+        LOG.info("creating board %s", sprint_title)
         board = api.create_sprint(sprint_title, body=sprint_description)
 
         if sprint_notes:
             # create sprint notes issue
             if not notes_issue:
-                LOG.info('creating sprint notes issue in %s', notes_repo)
-                notes_issue = repo.create_issue(title=sprint_notes_title,
-                                                body=sprint_notes_description)
+                LOG.info("creating sprint notes issue in %s", notes_repo)
+                notes_issue = repo.create_issue(
+                    title=sprint_notes_title, body=sprint_notes_description
+                )
 
             # add sprint note to card in notes column
-            LOG.info('creating sprint notes card')
-            notes = api.get_column(board, 'notes')
+            LOG.info("creating sprint notes card")
+            notes = api.get_column(board, "notes")
             notes.create_card(
                 content_id=notes_issue.id,
-                content_type='Issue',
+                content_type="Issue",
             )
 
         # copy cards if requested
         if copy_cards and previous:
-            LOG.info('copying cards from %s', previous.name)
+            LOG.info("copying cards from %s", previous.name)
             api.copy_board(previous, board)
         elif copy_cards:
-            LOG.warning('not copying cards (no previous board)')
+            LOG.warning("not copying cards (no previous board)")
 
     except BoardConflictError as err:
         if conflict_is_warning:
@@ -223,4 +244,4 @@ def main(ctx, date, templates, force, check_only, sprint_notes, notes_repo, copy
             raise click.ClickException(str(err))
 
     except github.GithubException as err:
-        raise click.ClickException(err)
+        raise click.ClickException(f"{err}")

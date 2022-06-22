@@ -10,7 +10,7 @@ def get_all_cards(board):
 
     LOG.info('getting cards from board "%s"', board.name)
     for col in board.get_columns():
-        if col.name.lower() in ['notes']:
+        if col.name.lower() in ["notes"]:
             continue
 
         LOG.debug('processing column "%s"', col.name)
@@ -37,14 +37,14 @@ def find_missing_cards(board, all_cards):
     return new_cards
 
 
-@click.command(name='cards-missing-from-backlog')
+@click.command(name="cards-missing-from-backlog")
 @click.pass_context
 def main(ctx):
     api = ctx.obj
 
     try:
         backlog = next(
-            x for x in api.backlog.get_columns() if x.name.lower() == 'backlog'
+            x for x in api.backlog.get_columns() if x.name.lower() == "backlog"
         )
 
         all_cards = get_all_cards(api.backlog)
@@ -54,9 +54,9 @@ def main(ctx):
 
         for content in new_cards.values():
             if isinstance(content, github.Issue.Issue):
-                content_type = 'Issue'
+                content_type = "Issue"
             elif isinstance(content, github.PullRequest.PullRequest):
-                content_type = 'PullRequest'
+                content_type = "PullRequest"
             else:
                 raise ValueError(type(content))
 

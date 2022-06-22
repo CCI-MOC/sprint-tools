@@ -1,8 +1,10 @@
 import jinja2
 import re
 
-re_priority = re.compile(r'(\[\s*(?P<prio>\d+)\s*\]\s*)?(?P<title>.*)')
-title_format = jinja2.Template('{% if priority is not none %}[{{ priority }}] {% endif %}{{ title }}')
+re_priority = re.compile(r"(\[\s*(?P<prio>\d+)\s*\]\s*)?(?P<title>.*)")
+title_format = jinja2.Template(
+    "{% if priority is not none %}[{{ priority }}] {% endif %}{{ title }}"
+)
 
 
 class CardWrapper:
@@ -39,7 +41,7 @@ class CardWrapper:
         if self.note:
             lines = self.note.splitlines()
             lines[0] = title
-            note = '\n'.join(lines)
+            note = "\n".join(lines)
             self.edit(note=note)
         else:
             content = self.get_content()
@@ -48,7 +50,7 @@ class CardWrapper:
     @property
     def title(self):
         mo = re_priority.match(self._raw_title)
-        return mo.group('title')
+        return mo.group("title")
 
     @title.setter
     def title(self, title):
@@ -57,7 +59,7 @@ class CardWrapper:
     @property
     def priority(self):
         mo = re_priority.match(self._raw_title)
-        prio = mo.group('prio')
+        prio = mo.group("prio")
         return int(prio) if prio is not None and prio.isdigit() else None
 
     @priority.setter

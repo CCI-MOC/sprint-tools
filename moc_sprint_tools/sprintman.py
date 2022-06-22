@@ -8,8 +8,8 @@ from functools import cached_property
 from moc_sprint_tools import defaults
 
 LOG = logging.getLogger(__name__)
-DEFAULT_ORG = 'CCI-MOC'
-DEFAULT_BACKLOG = 'mocbacklog'
+DEFAULT_ORG = "CCI-MOC"
+DEFAULT_BACKLOG = "mocbacklog"
 
 
 class ApplicationError(Exception):
@@ -17,28 +17,29 @@ class ApplicationError(Exception):
 
 
 class BoardNotFoundError(ApplicationError):
-    '''Reference to a board that does not exist.'''
+    """Reference to a board that does not exist."""
+
     pass
 
 
 class BoardConflictError(ApplicationError):
-    '''Attempt to create a board that overlaps an existing board'''
+    """Attempt to create a board that overlaps an existing board"""
+
     pass
 
 
 class BoardExistsError(ApplicationError):
-    '''Attempt to create a board with the same name as an existing board.'''
+    """Attempt to create a board with the same name as an existing board."""
 
 
 # XXX: there should probably be some error handling inside
 # the sort_key helper, but the failure mode with the current code
 # is "raise an exception" rather than "do the wrong thing".
 def sort_sprints(sprints):
-    '''return sprints sorted by start date'''
+    """return sprints sorted by start date"""
 
     def sort_key(sprint):
-        return datetime.date.fromisoformat(
-            json.loads(sprint.body)['week1'])
+        return datetime.date.fromisoformat(json.loads(sprint.body)["week1"])
 
     return sorted(sprints, key=sort_key)
 
@@ -55,8 +56,8 @@ class Sprintman(github.Github):
 
     @property
     def open_sprints(self):
-        for board in self.organization.get_projects('open'):
-            if board.name.lower().strip().startswith('sprint'):
+        for board in self.organization.get_projects("open"):
+            if board.name.lower().strip().startswith("sprint"):
                 yield board
 
     def get_sprint(self, name):
@@ -67,13 +68,13 @@ class Sprintman(github.Github):
 
     @property
     def closed_sprints(self):
-        for board in self.organization.get_projects('closed'):
-            if board.name.lower().startswith('sprint'):
+        for board in self.organization.get_projects("closed"):
+            if board.name.lower().startswith("sprint"):
                 yield board
 
     @property
     def backlog(self):
-        for board in self.organization.get_projects('open'):
+        for board in self.organization.get_projects("open"):
             if board.name.lower() == self._backlog_name.lower():
                 break
         else:
@@ -91,7 +92,7 @@ class Sprintman(github.Github):
         board.edit(private=False)
 
         for column in defaults.default_sprint_columns:
-            LOG.debug('adding column %s in board %s', column, name)
+            LOG.debug("adding column %s in board %s", column, name)
             board.create_column(column)
 
         return board
@@ -102,16 +103,18 @@ class Sprintman(github.Github):
         try:
             if content:
                 if isinstance(content, github.Issue.Issue):
-                    content_type = 'Issue'
+                    content_type = "Issue"
                 elif isinstance(content, github.PullRequest.PullRequest):
-                    content_type = 'PullRequest'
+                    content_type = "PullRequest"
                 else:
                     LOG.warning("couldn't copy card %s with unkown type", source_card)
                     return
 
-                LOG.info('adding card "%s" to column %s',
-                         content.title,
-                         destination_column.name)
+                LOG.info(
+                    'adding card "%s" to column %s',
+                    content.title,
+                    destination_column.name,
+                )
                 destination_column.create_card(
                     content_id=content.id,
                     content_type=content_type,
@@ -119,14 +122,15 @@ class Sprintman(github.Github):
             elif source_card.note:
                 destination_column.create_card(note=source_card.note)
             else:
-                raise ValueError(f'card {source_card.id} has no content')
+                raise ValueError(f"card {source_card.id} has no content")
         except github.GithubException as err:
             # XXX: we can make the error display nicer by parsing out the
             # content of err.data['errors'].
-            LOG.warning('failed to copy card %s: %s', source_card, err)
+            LOG.warning("failed to copy card %s: %s", source_card, err)
 
-    def copy_board(self, source_board, destination_board,
-                   columns=None, ignore_columns=None):
+    def copy_board(
+        self, source_board, destination_board, columns=None, ignore_columns=None
+    ):
 
         if columns is None:
             columns = source_board.get_columns()
@@ -135,7 +139,7 @@ class Sprintman(github.Github):
             ignore_columns = defaults.default_skip_copy
 
         for source in columns:
-            LOG.debug('copying cards from column %s', source.name)
+            LOG.debug("copying cards from column %s", source.name)
             if source.name.lower() in ignore_columns:
                 continue
 
@@ -146,5 +150,5 @@ class Sprintman(github.Github):
             cards = list(source.get_cards())
 
             for card in reversed(cards):
-                LOG.debug('copying card %s', card.id)
+                LOG.debug("copying card %s", card.id)
                 self.copy_card(card, destination)

@@ -16,9 +16,14 @@ def process_closed_board(board):
                 continue
 
             LOG.debug('processing card "%s"', content.title)
-            if content.state == 'open' and any(label.name == 'accepted' for label in content.labels):
-                LOG.info('found open card "%s" on closed board "%s"',
-                         content.title, board.name)
+            if content.state == "open" and any(
+                label.name == "accepted" for label in content.labels
+            ):
+                LOG.info(
+                    'found open card "%s" on closed board "%s"',
+                    content.title,
+                    board.name,
+                )
                 maybe_unlabel[content.url] = content
 
 
@@ -32,19 +37,20 @@ def process_open_board(board):
                 continue
 
             LOG.debug('processing card "%s"', content.title)
-            if any(label.name == 'accepted' for label in content.labels):
+            if any(label.name == "accepted" for label in content.labels):
                 LOG.debug('card "%s" is already accepted', content.title)
             else:
                 LOG.info('adding "accepted" label to card "%s"', content.title)
-                content.add_to_labels('accepted')
+                content.add_to_labels("accepted")
 
             if content.url in maybe_unlabel:
-                LOG.info('found card "%s" on open board "%s"',
-                         content.title, board.name)
+                LOG.info(
+                    'found card "%s" on open board "%s"', content.title, board.name
+                )
                 del maybe_unlabel[content.url]
 
 
-@click.command(name='label-cards-in-sprint')
+@click.command(name="label-cards-in-sprint")
 @click.pass_context
 def main(ctx):
     sm = ctx.obj
@@ -58,6 +64,6 @@ def main(ctx):
 
         for url, content in maybe_unlabel.items():
             LOG.info('removing "accepted" label from card "%s"', content.title)
-            content.remove_from_labels('accepted')
+            content.remove_from_labels("accepted")
     except github.GithubException as err:
         raise click.ClickException(err)
