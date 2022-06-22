@@ -22,11 +22,11 @@ def runner():
 
 
 def test_main_invalid_args(runner):
-    res = runner.invoke(moc_sprint_tools.cli.main, 'invalid')
+    res = runner.invoke(moc_sprint_tools.cli.main, "invalid")
     assert res.exit_code == 2
 
 
 def test_main_override_org(api_class, runner):
-    res = runner.invoke(moc_sprint_tools.cli.main, '-o fake_org shell')
+    res = runner.invoke(moc_sprint_tools.cli.main, "-o fake_org shell")
     assert res.exit_code == 0
-    assert api_class.call_args[1]['org_name'] == 'fake_org'
+    assert api_class.call_args[1]["org_name"] == "fake_org"

@@ -15,6 +15,4 @@ jobs:
       - run: pip install pipenv
       - run: pipenv install -d
       - run: >
-          pipenv run flake8 moc_sprint_tools
-      - run: >
           pipenv run pytest -v --cov=moc_sprint_tools
