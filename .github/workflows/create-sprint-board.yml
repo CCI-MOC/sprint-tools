@@ -2,7 +2,7 @@
 name: "Create sprint board"
 on:
   schedule:
-    - cron: '0 10 * * 2'
+    - cron: '0 2 * * 3'
   workflow_dispatch:
 
 jobs:
